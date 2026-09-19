@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+  <title>DOOM</title>
+
+  <script src="https://v8.js-dos.com/v6.22/js-dos.js"></script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #0d0d0d;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: monospace;
+      color: #ccc;
+      overflow: hidden;
+    }
+
+    h1 {
+      color: #c00;
+      font-size: 2rem;
+      letter-spacing: 0.3em;
+      text-shadow: 0 0 16px #f00;
+      margin-bottom: 4px;
+    }
+
+    .sub {
+      font-size: 0.7rem;
+      color: #444;
+      letter-spacing: 0.15em;
+      margin-bottom: 14px;
+    }
+
+    #jsdos {
+      width: 640px;
+      height: 400px;
+      max-width: 98vw;
+      max-height: 65vh;
+      display: block;
+      background: #000;
+      cursor: crosshair;
+    }
+
+    #hint {
+      margin-top: 8px;
+      font-size: 0.75rem;
+      color: #f80;
+      text-align: center;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    button {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      color: #777;
+      padding: 6px 14px;
+      font-family: monospace;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+
+    button:hover {
+      border-color: #c00;
+      color: #fff;
+    }
+
+    .keys {
+      margin-top: 14px;
+      font-size: 0.68rem;
+      color: #3a3a3a;
+      text-align: center;
+      line-height: 2;
+    }
+
+    .keys kbd {
+      color: #555;
+      background: #111;
+      border: 1px solid #222;
+      padding: 1px 5px;
+      border-radius: 2px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>DOOM</h1>
+  <div class="sub">id Software · 1993</div>
+
+  <canvas id="jsdos" oncontextmenu="return false;"></canvas>
+
+  <div id="hint">Loading DOOM...</div>
+
+  <div class="controls">
+    <button onclick="goFullscreen()">⛶ Fullscreen</button>
+  </div>
+
+  <div class="keys">
+    <kbd>W A S D</kbd> Move &nbsp;
+    <kbd>Mouse</kbd> Turn &nbsp;
+    <kbd>Ctrl</kbd> Fire &nbsp;
+    <kbd>Space</kbd> Use &nbsp;
+    <kbd>Shift</kbd> Run &nbsp;
+    <kbd>1–7</kbd> Weapons &nbsp;
+    <kbd>Tab</kbd> Map &nbsp;
+    <kbd>Esc</kbd> Menu
+  </div>
+
+<script>
+
+const canvas = document.getElementById("jsdos");
+const hint = document.getElementById("hint");
+
+const DOOM_ZIP =
+  "https://raw.githubusercontent.com/arkuededed/doom/main/DOOM-%40evilution%20%281%29.zip";
+
+function status(message) {
+  hint.textContent = message;
+  console.log(message);
+}
+
+
+/*
+ * Start js-dos
+ *
+ * IMPORTANT:
+ * v6.22 expects wdosboxUrl here.
+ */
+Dos(canvas, {
+  wdosboxUrl: "https://v8.js-dos.com/v6.22/dosbox.js",
+
+  // Prevent the emulator from immediately grabbing the mouse.
+  autolock: false,
+
+  // Reasonable CPU speed for DOOM.
+  cycles: 10000
+
+})
+.ready(function(fs, main) {
+
+  status("Downloading DOOM...");
+
+  /*
+   * Extract the ZIP directly into C:
+   */
+  fs.extract(DOOM_ZIP)
+
+  .then(function() {
+
+    status("Starting DOOM...");
+
+    /*
+     * The ZIP used by your original page has DOOM.EXE
+     * available to DOSBox.
+     *
+     * Start it directly instead of making a custom
+     * dosbox.conf.
+     */
+    return main([
+      "-c",
+      "DOOM.EXE"
+    ]);
+
+  })
+
+  .then(function(ci) {
+
+    console.log("DOOM is running.");
+    window.doom = ci;
+
+    status("▶ Click the game window to capture mouse");
+
+    setupMouse();
+
+  })
+
+  .catch(function(error) {
+
+    console.error("DOOM ERROR:", error);
+
+    status("DOOM failed to load — press F12 and check Console.");
+
+  });
+
+})
+
+.catch(function(error) {
+
+  console.error("js-dos initialization error:", error);
+
+  status("js-dos failed to initialize — press F12 and check Console.");
+
+});
+
+
+/*
+ * Mouse controls
+ */
+
+function setupMouse() {
+
+  canvas.setAttribute("tabindex", "0");
+
+  canvas.addEventListener("click", function() {
+
+    canvas.focus();
+
+    if (canvas.requestPointerLock) {
+      canvas.requestPointerLock();
+    }
+
+    status("Esc to release mouse");
+
+  });
+
+  document.addEventListener("pointerlockchange", function() {
+
+    if (document.pointerLockElement === canvas) {
+
+      status("Esc to release mouse");
+
+    } else {
+
+      status("▶ Click the game window to recapture mouse");
+
+    }
+
+  });
+
+}
+
+
+/*
+ * Fullscreen
+ */
+
+function goFullscreen() {
+
+  if (canvas.requestFullscreen) {
+    canvas.requestFullscreen();
+  }
+
+}
+
+</script>
+
+</body>
+</html>
